@@ -16,12 +16,10 @@
 
   <!-- author -->
   {{- $site_author := or site.Author.name site.Params.name site.Title -}}
-  <!---->
   {{- if eq .Kind "page" -}}
   <meta name="description" content="{{- .Summary -}}" />
   <meta name="author" content="{{- or .Params.author $site_author -}}" />
   {{- else -}}
-  <!---->
   <meta
     name="description"
     content="{{- site.Params.description | default (print `A personal blog`) -}}"
@@ -30,33 +28,42 @@
   {{- end -}}
 
   <!-- css & js -->
+  {{/* Get main CSS */}}
   {{- $main := resources.Get "main.css" -}}
-  <!---->
-  {{- $custom := resources.Get "custom.css" -}}
-  <!---->
-  {{- $css := slice $main $custom | resources.Concat "main.css" | minify -}}
-  <link rel="preload stylesheet" as="style" href="{{- $css.Permalink -}}" />
+
+  {{/* Get all custom CSS paths from params.customCSS */}}
+  {{- $customCSSPaths := site.Params.customCSS | default (slice) -}}
+  {{- $customCSSResources := slice -}}
+  {{- range $cssPath := $customCSSPaths -}}
+    {{- $res := resources.Get $cssPath -}}
+    {{- if $res -}}
+      {{- $customCSSResources = $customCSSResources | append $res -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{/* Append main.css to custom CSS resources */}}
+  {{- $allCSS := $customCSSResources | append $main -}}
+
+  {{/* Concatenate and minify all CSS into one bundle */}}
+  {{- $cssBundle := $allCSS | resources.Concat "css/bundle.css" | resources.Minify -}}
+
+  <link rel="stylesheet" href="{{ $cssBundle.Permalink }}" />
 
   <!-- dark icon -->
   {{- $dark_icon := "theme.png" -}}
-  <!---->
   {{- if site.Params.monoDarkIcon -}}{{- $dark_icon = "theme.svg" -}}{{- end -}}
-  <!---->
   <link rel="preload" as="image" href="{{- $dark_icon | absURL -}}" />
 
   <!-- avatar -->
   {{- $avatar_url := $.Scratch.Get "avatar_url" -}}
-  <!---->
   {{- if $avatar_url -}}
   <link rel="preload" as="image" href="{{- $avatar_url -}}" />
   {{- end -}}
-  <!---->
 
   <!-- social list -->
   {{- range $.Scratch.Get "social_list" -}}
   <link rel="preload" as="image" href="{{- printf `%s.svg` . | absURL -}}" />
   {{- end -}}
-  <!---->
 
   <!-- highlight js -->
   {{- if and .IsPage (not site.Params.disableHLJS) -}}
@@ -69,11 +76,8 @@
 
   <!-- math -->
   {{- if or .Params.math site.Params.math -}}
-  <!---->
   {{- partial "math.html" . -}}
-  <!---->
   {{- end -}}
-  <!---->
 
   <!-- favicon -->
   <link
@@ -90,14 +94,11 @@
 
   <!-- production -->
   {{- if or hugo.IsProduction (eq site.Params.env "production") -}}
-  <!---->
   {{- template "_internal/google_analytics.html" . -}}
-  <!---->
   {{- template "_internal/schema.html" . -}}
-  <!---->
   {{- template "_internal/opengraph.html" . -}}
-  <!---->
   {{- template "_internal/twitter_cards.html" . -}}
+
   <!-- RSS -->
   {{- range .AlternativeOutputFormats -}}
   <link
@@ -111,5 +112,4 @@
   <!-- canonical -->
   <link rel="canonical" href="{{- .Permalink -}}" />
   {{- end -}}
-  <!---->
 </head>
