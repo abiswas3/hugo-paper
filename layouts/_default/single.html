@@ -1,43 +1,46 @@
 {{- define "main" -}}
 
 <article>
-  <header class="mb-14">
-    <h1 class="my-0! pb-2.5">{{- .Title -}}</h1>
+<header class="mb-14">
+  {{ if ne .Params.showtitle false }}
+    <h1>{{ .Title }}</h1>
+  {{ end }}
 
-  <!-- Post Tags: between title and metadata -->
-    {{- if .Params.tags -}}
-    <footer class="mb-4 flex flex-wrap">
-  {{- range .Params.tags -}}
-  {{- $href := print (absURL "tags/") (urlize .) -}}
-  <a class="tag" href="{{- $href -}}">
-    {{- . -}}
-  </a>
-  {{- end -}}
-</footer>
-        {{- end -}}
+  <!-- Post Tags -->
+  {{- with .Params.tags }}
+    <footer class="mb-4 flex flex-wrap gap-2">
+      {{- range . }}
+        {{- $href := print (absURL "tags/") (urlize .) }}
+        <a class="tag" href="{{ $href }}">{{ . }}</a>
+      {{- end }}
+    </footer>
+  {{- end }}
 
-    {{- if ne .Type "page" -}}
+  <!-- Metadata: Date and Authors -->
+  {{ if ne .Type "page" }}
     <div class="text-xs antialiased opacity-60">
-      {{- if .Date -}}
-      <time>{{- .Date | time.Format ":date_medium" -}}</time>
-      {{- end -}}<!---->
-      {{- $single_author := or .Params.Author site.Author.name -}}
-      <!---->
-      {{- if $single_author -}}
-      <span class="mx-1">&middot;</span>
-      <span>{{- $single_author -}}</span>
-      {{- end -}}
+      {{ with .Date }}
+        <time>{{ . | time.Format ":date_medium" }}</time>
+      {{ end }}
+      {{ $authors := .Params.authors | default (slice site.Author.name) }}
+      {{ if gt (len $authors) 0 }}
+        <span class="mx-1">&middot;</span>
+        {{ range $i, $a := $authors }}
+          {{ if gt $i 0 }}, {{ end }}<span>{{ $a }}</span>
+        {{ end }}
+      {{ end }}
     </div>
-    {{- end -}}
-  </header>
+  {{ end }}
+</header>
 
 
   <!-- Show Table of Contents if it exists -->
-  {{ if .TableOfContents }}
-  <nav class="toc">
-    {{ .TableOfContents | safeHTML }}
-  </nav>
-  {{ end }}
+{{ if and (.Params.toc) (.TableOfContents) }}
+  <aside class="toc">
+    {{ .TableOfContents }}
+  </aside>
+{{ end }}
+
 
 
   <section>{{- .Content -}}</section>
